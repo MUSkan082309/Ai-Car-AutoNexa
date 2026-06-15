@@ -369,3 +369,52 @@ export async function getCarById(carId) {
     );
   }
 }
+
+export async function getSavedCars() {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return {
+        success: false,
+        data: [],
+      };
+    }
+
+    const user = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+      },
+    });
+
+    if (!user) {
+      return {
+        success: false,
+        data: [],
+      };
+    }
+
+    const savedCars = await db.userSavedCar.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        car: true,
+      },
+    });
+
+    return {
+      success: true,
+      data: savedCars.map((item) =>
+        serializeCarData(item.car, true)
+      ),
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      success: false,
+      data: [],
+    };
+  }
+}
